@@ -1,5 +1,10 @@
 # Raw data source
 city_search.json
+*.csv
+*.pkl
+*.json
+*.png
+*.html
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

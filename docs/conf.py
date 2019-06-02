@@ -170,23 +170,23 @@ htmlhelp_basename = 'demo_datasciencedoc'
 # -- Options for LaTeX output --------------------------------------------------
 
 latex_elements = {
-    # The paper size ('letterpaper' or 'a4paper').
-    # 'papersize': 'letterpaper',
+	# The paper size ('letterpaper' or 'a4paper').
+	# 'papersize': 'letterpaper',
 
-    # The font size ('10pt', '11pt' or '12pt').
-    # 'pointsize': '10pt',
+	# The font size ('10pt', '11pt' or '12pt').
+	# 'pointsize': '10pt',
 
-    # Additional stuff for the LaTeX preamble.
-    # 'preamble': '',
+	# Additional stuff for the LaTeX preamble.
+	# 'preamble': '',
 }
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-    ('index',
-     'demo_datascience.tex',
-     u'demo_datascience Documentation',
-     u"Antoine Deblonde", 'manual'),
+	('index',
+	 'demo_datascience.tex',
+	 u'demo_datascience Documentation',
+	 u"Antoine Deblonde", 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -215,8 +215,8 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'demo_datascience', u'demo_datascience Documentation',
-     [u"Antoine Deblonde"], 1)
+	('index', 'demo_datascience', u'demo_datascience Documentation',
+	 [u"Antoine Deblonde"], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -229,9 +229,9 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    ('index', 'demo_datascience', u'demo_datascience Documentation',
-     u"Antoine Deblonde", 'demo_datascience',
-     'Data Science Project Demonstration', 'Miscellaneous'),
+	('index', 'demo_datascience', u'demo_datascience Documentation',
+	 u"Antoine Deblonde", 'demo_datascience',
+	 'Data Science Project Demonstration', 'Miscellaneous'),
 ]
 
 # Documents to append as an appendix to all manuals.
