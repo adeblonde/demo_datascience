@@ -3,7 +3,6 @@ import click
 import os
 import logging
 from pathlib import Path
-# from dotenv import find_dotenv, load_dotenv
 import json
 import pandas as pd
 import numpy as np
@@ -17,9 +16,6 @@ def subseries(logger, city_list, nb_cities, encoder) :
 	The output is a tuple :
 	([city_0, city_1, ... , city_(nb_cities-1)], city_(nb_cities))
 	"""
-
-	# if len(city_list) == 2 :
-	# logger.info("input %s, %s" % (city_list, nb_cities))
 
 	try :
 		assert(nb_cities > 1)
@@ -41,13 +37,8 @@ def subseries(logger, city_list, nb_cities, encoder) :
 		all_cities_serie.append(np.concatenate(cities_serie))
 		# all_cities_serie.append((cities_serie[:-1], cities_serie[-1]))
 
-	# if len(city_list) == 2 :
-	# logger.info("output : %s" % all_cities_serie)
 	return all_cities_serie
 
-# @click.command()
-# @click.argument('input_filepath', type=click.Path(exists=True))
-# @click.argument('output_filepath', type=click.Path())
 def main(raw_data_dir, processed_data_dir, graph_dir, dump_jpg):
 
 	""" Prepare datasets for next city prediction """
@@ -80,12 +71,6 @@ def main(raw_data_dir, processed_data_dir, graph_dir, dump_jpg):
 	""" create Label Binarizer """
 	encoder = LabelBinarizer()
 	encoder.fit(all_cities)
-	# logger.info(encoder.classes_)
-	# logger.info(encoder.transform(['Tucson AZ']))
-
-	# cities_col_names = [0] * nb_max_cities
-	# for i in range(nb_max_cities) :
-	# 	cities_col_names[i] = 'city_' + str(i)
 
 	""" save parameters to disk """
 	cities_parameters = {
@@ -100,7 +85,6 @@ def main(raw_data_dir, processed_data_dir, graph_dir, dump_jpg):
 
 	""" extract cities' series from dataframe """
 	cities_series = []
-	# cities_series_encoders = dict()
 	for i in range(2, nb_max_cities) :
 		# temp_serie = df[df['cities_serie_length'] >= i]['cities_serie'].apply(lambda x : len(x))
 		temp_df = df[df['cities_serie_length'] >= i]['cities_serie']
@@ -112,63 +96,41 @@ def main(raw_data_dir, processed_data_dir, graph_dir, dump_jpg):
 
 		temp_serie = [(x[:(i-1) * card_cities], np.where(x[(i-1) * card_cities:] == 1)[0].item()) for x in temp_serie]
 
-		# temp_serie = [[*x] for x in zip(*temp_serie)]
-		# temp_serie = [np.array(x) for x in temp_serie]
-
-		# print(temp_serie[1][:10])
-		# print(temp_serie[0][:10])
-		# logger.info("Sample of data :\n%s" % temp_serie)
-
 		""" save prepared cities' serie to disk """
 		save_pickle(temp_serie, os.path.join(processed_data_dir, 'cities_series_length_' + str(i) + '.pkl'))
-		
 
-		# cities_series[i] = temp_serie
-		# df['cities_serie_' + str(i)] = df[df['cities_serie_length'] >= i]['cities_serie'].apply(lambda x : subseries(logger, x, i, encoder))
-		# encoder = LabelBinarizer()
-		# temp_serie_1hot = pd.get_dummies(temp_serie)
-		# temp_serie_1hot = encoder.fit_transform(temp_serie)
-		# cities_series[i] = {
-		# 	# 'encoder' : encoder,
-		# 	'cities_series' : temp_serie,
-		# 	'cities_series_1hot' : temp_serie_1hot
-		# }
+	""" extract extra features """
+	extract_extra_feature(logger, df)
 
-	# debug = cities_series[2]['cities_series_1hot'].columns.tolist()
-	# print(debug[:88])
-	# print(len(debug))
-	# print(pd.DataFrame(cities_series[6]))
+def extract_extra_feature(logger, df) :
 
-	# logger.info("Raw data :\n%s" % df[['cities', 'cities_serie_2', 'cities_serie_3']][:10])
+	""" labelbinarization of extra features ; user id, joining date, country """
+	extra_features = ['user_id', 'joining_date_month', 'country']
 
+	for feature in extra_features :
+		feature_all_values = df[feature].drop_duplicates().fillna("null").tolist()
+		feature_all_values = list(set(feature_all_values))
+		if len(feature_all_values) > 50 :
+			logger.info("Number of different values for feature %s is %s : too high, drop feature" % (feature, len(feature_all_values)))
+			continue
+		logger.info("List of all values for feature %s : %s" %(feature, feature_all_values))
+		feature_encoder = LabelBinarizer()
+		feature_encoder.fit(feature_all_values)
+		encoded_features = feature_encoder.transform(df[feature].tolist())
+		# encoded_features = feature_encoder.transform(df[feature]).tolist()
+		encoded_features = np.array(encoded_features)
 
+		logger.info("Shape of encoded feature %s : %s" % (feature, encoded_features.shape))
+		logger.info("Sample of encoded feature %s : %s" % (feature, encoded_features[:3]))
 
-	# # df = df[cities_col_names]
-	# # df.fillna("null", inplace=True)
-	# # logger.info("Raw data :\n%s" % df[:10])
-
-	# """ one-hot encoding of cities """
-	# # encoder = LabelBinarizer()
-	# # city_encoded_1hot = encoder.fit_transform(df[['city_0', 'city_1']])
-	# city_encoded_1hot = pd.get_dummies(df)
-
-	# logger.info("Encoded cities array shape %s" % city_encoded_1hot.shape[0])
-	# # logger.info(encoder.classes_)
-	# logger.info("Extract :\n%s" % city_encoded_1hot)
-	
-
-
-
+		""" save prepared extra feature to disk """
+		save_pickle(encoded_features, os.path.join(processed_data_dir, feature + '_data.pkl'))
 
 if __name__ == '__main__':
 	log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 	logging.basicConfig(level=logging.INFO, format=log_fmt)
 
 	project_dir = Path(__file__).resolve().parents[2]
-
-	# find .env automagically by walking up directories until it's found, then
-	# load up the .env entries as environment variables
-	# load_dotenv(find_dotenv())
 
 	""" directory containing raw data """
 	raw_data_dir = os.path.join(project_dir, 'data', 'raw')

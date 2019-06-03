@@ -15,7 +15,7 @@ def bokeh_table(columns, graph_dir, graph_name, dump_jpg, show_html, width=300, 
 	as a bokeh table
 
 	Parameters :
-		properties (list) : List of columns to plot, with the format [(column_name, column_title, column_values)]
+		columns (list) : List of columns to plot, with the format [(column_name, column_title, column_values)]
 		column_name being a string, column_values being a list
 		graph_dir (string) : folder where the output html and/or jpg figure will be dumped
 		graph_name (string): name of the figure, the output in 'graph_dir' will be name
@@ -97,15 +97,7 @@ def bokeh_barchart(data, absciss, categories, colors, title, graph_dir, graph_na
 		height (integer) : height of the figure
 	"""
 
-	# print(data[absciss])
-	# print(categories)
-
 	x = [(absciss_value, cat_value) for absciss_value in data[absciss] for cat_value in categories]
-	# counts = data[categories[0]]
-	# for cat_value in categories :
-		# counts = zip(counts, data[cat_value])
-		# counts = sum(counts, ())
-	# print(counts)
 	counts = sum(zip(*[data[cat_value] for cat_value in categories]), ())
 
 	source = ColumnDataSource(data=dict(x=x, counts=counts))
@@ -119,19 +111,6 @@ def bokeh_barchart(data, absciss, categories, colors, title, graph_dir, graph_na
 	customPalette.append('#000000')
 
 	p.vbar(x='x', top='counts', width=0.9, source=source, fill_color=factor_cmap('x', palette=customPalette, factors=categories, start=1, end=2))
-
-	# source = ColumnDataSource(data=data)
-
-	# p = figure(x_range=data[absciss], plot_height=height, plot_width=width, title=title)
-
-	# category_count = 0
-	# nb_categories = float(len(categories))
-	# print("nb categories : %s" % nb_categories)
-	# for category in categories :
-	# 	dodge_value = -0.05 * nb_categories + float(category_count) * 0.125
-	# 	print("dodge_value : %s" % dodge_value)
-	# 	p.vbar(x=dodge(absciss, dodge_value, range=p.x_range), top=category, width=0.1, source=source, color=colors[category], legend=value(category))
-	# 	category_count += 1
 
 	p.xgrid.grid_line_color = None
 	p.y_range.start = 0

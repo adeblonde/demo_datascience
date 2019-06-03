@@ -66,8 +66,19 @@ def main(raw_data_dir, processed_data_dir, model_dir, graph_dir, train_ratio, du
 	nb_max_records = 500
 
 	""" load data """
+	extra_features = ['joining_date_month', 'country']
+	extra_features_values = dict()
+	for feature in extra_features :
+		feature_values = load_pickle(os.path.join(processed_data_dir, feature + '_data.pkl'))
+		extra_features_values[feature] = feature_values
+
+
 	for i in range(2, nb_max_cities) :
 		data_cities = load_pickle(os.path.join(processed_data_dir, 'cities_series_length_' + str(i) + '.pkl'))
+		for feature in extra_features :
+			data_cities = zip(data_cities, extra_features_values[feature])
+
+			data_cities = [(np.concatenate((x[0], y)), x[1]) for (x, y) in data_cities]
 
 		""" split into modelization/train dataset and independant evaluation dataset """
 		data_cities_model, data_cities_eval = train_test_split(data_cities, train_size=train_ratio, random_state=42)
@@ -137,20 +148,20 @@ def main(raw_data_dir, processed_data_dir, model_dir, graph_dir, train_ratio, du
 
 				logger.info("Evaluation score : %s" % eval_accuracy)
 
-				with open(os.path.join(model_dir, 'best_params_' + model_name + '_serie_length_' + str(i) + '.json'), 'w') as f :
+				with open(os.path.join(model_dir, 'extended_best_params_' + model_name + '_serie_length_' + str(i) + '.json'), 'w') as f :
 					json.dump(search.best_params_, f)
 
 				perfs = {
 					'training_score' : search.best_score_,
 					'eval_score' : eval_accuracy
 				}
-				with open(os.path.join(model_dir, 'performances_' + model_name + '_serie_length_' + str(i) + '.json'), 'w') as f :
+				with open(os.path.join(model_dir, 'extended_performances_' + model_name + '_serie_length_' + str(i) + '.json'), 'w') as f :
 					json.dump(perfs, f)
 
-				save_pickle(search.best_estimator_, os.path.join(model_dir, 'predictor_%s_cities_series_%s.pkl' % (i, model_name)))
-			
+				save_pickle(search.best_estimator_, os.path.join(model_dir, 'extended_predictor_%s_cities_series_%s.pkl' % (i, model_name)))
+
 			with open(os.path.join(model_dir, 'performances_' + model_name + '_serie_length_' + str(i) + '.json'), 'r') as f :
-				perfs = json.load(f)
+							perfs = json.load(f)
 
 			all_performances_train.append(perfs['training_score'])
 			all_performances_eval.append(perfs['eval_score'])
@@ -160,8 +171,7 @@ def main(raw_data_dir, processed_data_dir, model_dir, graph_dir, train_ratio, du
 		columns = [('models', 'Models', all_models_names),
 		('accuracy_train', 'Acc @ Train', all_performances_train),
 		('accuracy_eval', 'Acc @ Eval', all_performances_eval)]
-		bokeh_table(columns, graph_dir, 'Performances_for_cities_serie_length_' + str(i), dump_jpg, True)
-
+		bokeh_table(columns, graph_dir, 'Extended_Performances_for_cities_serie_length_' + str(i), dump_jpg, True)
 
 if __name__ == '__main__':
 	log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'

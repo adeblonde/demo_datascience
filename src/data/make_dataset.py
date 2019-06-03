@@ -3,32 +3,32 @@ import click
 import os
 import logging
 from pathlib import Path
-# from dotenv import find_dotenv, load_dotenv
 import json
 import pandas as pd
 from pandas.io.json import json_normalize
 from datetime import datetime
 
-# @click.command()
-# @click.argument('input_filepath', type=click.Path(exists=True))
-# @click.argument('output_filepath', type=click.Path())
 def main(raw_data_dir, processed_data_dir, graph_dir, dump_jpg):
+	
 	""" Runs data processing scripts to turn raw data from (../raw) into
 		cleaned data ready to be analyzed (saved in ../processed).
 	"""
+
 	logger = logging.getLogger(__name__)
 	logger.info('Making cleaned data set from raw data')
 
+	""" loading raw data source and begin cleaning """
 	raw_data = ''
 	with open(os.path.join(raw_data_dir, 'city_search.json'), 'r') as fp :
 		raw_data = fp.read()
 		df = pd.read_json(raw_data, orient='records')
 
 	logger.info("Raw columns' names : %s" % df.columns.tolist())
-	logger.info("Raw Data insights : \n%s" % df[:5])
+	logger.info("Raw Data insights : \n%s" % df[:3])
 
 	fields = ['cities', 'session_id', 'unix_timestamp', 'user']
 
+	""" Some fields are lists of length 1 : we flatten them """
 	logger.info("Unboxing fields")
 	df = field_unboxing(logger, df, fields)
 	logger.info("Data after unboxing")
@@ -36,17 +36,18 @@ def main(raw_data_dir, processed_data_dir, graph_dir, dump_jpg):
 
 	final_fields = ['cities', 'session_id', 'unix_timestamp', 'country', 'joining_date', 'user_id']
 
+	""" the session_id field is a nested json """
 	logger.info("Flattening of json field (session_id)")
 	df = user_flattening(logger, df, final_fields)
-	logger.info("Data after flattening")
-	logger.info(df[:5])
+	logger.info("Data after flattening :\n%s" % df[:3])
 
+	""" we extract time elements from unix timestamp and joining date """
 	logger.info("Extraction of time elements from timestamp and joining date")
 	df = time_extract(logger, df, 'unix_timestamp', 'timestamp')
 	df = time_extract(logger, df, 'joining_date', 'date')
-	logger.info("Data after extraction of time elements")
-	logger.info(df[:5])
+	logger.info("Data after extraction of time elements :\n%s" % df[:3])
 
+	""" we split the 'cities' column """
 	logger.info("Splitting cities column into multiple columns, one per city")
 	df['cities'] = df['cities'].apply(lambda x : x.replace(', ', ','))
 	df_split = pd.DataFrame(df['cities'].str.split(',', expand=True).values.tolist())
@@ -55,30 +56,21 @@ def main(raw_data_dir, processed_data_dir, graph_dir, dump_jpg):
 	for i in range(nb_max_cities) :
 		cities_col_names[i] = 'city_' + str(i)
 	df_split.columns = cities_col_names
-	logger.info(df_split[:5])
 	df = df.merge(df_split, how='inner', left_index=True, right_index=True)
-	logger.info("Data after splitting cities column")
-	logger.info(df[:5])
+	logger.info("Data after splitting cities column :\n%s" % df[:3])
 
+	""" checking the process """
 	logger.info("Final columns' names : %s" % df.columns.tolist())
 
+	""" writing cleaned dataset to disk """
 	logger.info("Dumping cleaned dataset")
 	logger.info("All data : %s records" % df.shape[0])
 	df.to_csv(os.path.join(processed_data_dir, 'cleaned_dataset.csv'))
 
-	logger.info("Extracting and dumping records with non null country")
-	df_custom = df[df['country'] != ""]
-	logger.info("Non null country : %s records" % df_custom.shape[0])
-	df_custom.to_csv(os.path.join(processed_data_dir, 'non_null_country_dataset.csv'))
-
-	logger.info("Extracting and dumping records with null country")
-	df_custom = df[df['country'] == ""]
-	logger.info("Null country : %s records" % df_custom.shape[0])
-	df_custom.to_csv(os.path.join(processed_data_dir, 'null_country_dataset.csv'))
-
 def field_unboxing(logger, df, fields) :
 
 	""" create new columns extracting unique element from list inside record """
+
 	df['errors_unboxed_total'] = 0
 	for field in fields :
 		df['unboxed_' + field] = df[field].apply(lambda x : x[0])
@@ -106,7 +98,6 @@ def user_flattening(logger, df, final_fields) :
 	""" flattening user field """
 	df['user'] = df['user'].apply(pd.Series)
 	df_user_flat = json_normalize(df['user'])
-	# logger.info(df_user_flat[:10])
 	logger.info("Flattened columns' names : %s" % df_user_flat.columns.tolist())
 
 	df = df.merge(df_user_flat, how='inner', left_index=True, right_index=True)
@@ -160,10 +151,6 @@ if __name__ == '__main__':
 
 	project_dir = Path(__file__).resolve().parents[2]
 
-	# find .env automagically by walking up directories until it's found, then
-	# load up the .env entries as environment variables
-	# load_dotenv(find_dotenv())
-
 	""" directory containing raw data """
 	raw_data_dir = os.path.join(project_dir, 'data', 'raw')
 
@@ -174,6 +161,6 @@ if __name__ == '__main__':
 	graph_dir = os.path.join(project_dir, 'reports', 'figures')
 
 	""" do you want to dump jpg figures ? """
-	dump_jpg = False
+	dump_jpg = True
 
 	main(raw_data_dir, processed_data_dir, graph_dir, dump_jpg)
