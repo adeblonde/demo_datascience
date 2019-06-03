@@ -160,7 +160,7 @@ def main(raw_data_dir, processed_data_dir, model_dir, graph_dir, train_ratio, du
 
 				save_pickle(search.best_estimator_, os.path.join(model_dir, 'extended_predictor_%s_cities_series_%s.pkl' % (i, model_name)))
 
-			with open(os.path.join(model_dir, 'performances_' + model_name + '_serie_length_' + str(i) + '.json'), 'r') as f :
+			with open(os.path.join(model_dir, 'extended_performances_' + model_name + '_serie_length_' + str(i) + '.json'), 'r') as f :
 							perfs = json.load(f)
 
 			all_performances_train.append(perfs['training_score'])
